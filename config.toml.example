@@ -1,26 +1,32 @@
-# Default interval for health checks (in seconds)
 default_interval = 10
 
-# Default threshold for consecutive failures to mark a service as unhealthy
+# Consecutive failures to mark a service as unhealthy
 default_threshold = 3
+
+port = 8000
 
 [[services]]
 name = "A"
-endpoint = "localhost:8080/health"
-protocol = "http"
-interval = 10
+interface = "http"
+port = 8080
+host = "localhost"
+endpoint = "health"
+interval = 3
 threshold = 3
+match = 200
 
 [[services]]
 name = "B"
+interface = "http"
 endpoint = "localhost:8081/health"
-protocol = "http"
 interval = 10
 threshold = 3
+match = 503
 
 [[services]]
 name = "C"
+interface = "http"
 endpoint = "localhost:8082/health"
-protocol = "https"
 interval = 5
 threshold = 2
+match = 403
