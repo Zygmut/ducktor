@@ -29,5 +29,5 @@ func main() {
 		log.Fatalf("Error while creating Monitor: %s", err)
 	}
 
-	m.Run()
+	m.Run(cfg.Port)
 }

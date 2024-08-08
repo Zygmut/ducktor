@@ -10,6 +10,7 @@ import (
 type Config struct {
 	DefaultInterval  int             `toml:"default_interval"`
 	DefaultThreshold int             `toml:"default_threshold"`
+	Port             int             `toml:"port"`
 	Services         []ServiceConfig `toml:"services"`
 }
 

@@ -11,7 +11,7 @@ type HealthChecker interface {
 }
 
 type HealthCheckResult struct {
-	Status       string
+	IsHealthy    bool
 	ResponseTime time.Duration
 	Error        error
 }

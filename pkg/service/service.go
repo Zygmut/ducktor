@@ -2,6 +2,7 @@ package service
 
 import (
 	"ducktor/pkg/healthcheck"
+	"log"
 	"time"
 )
 
@@ -11,8 +12,13 @@ type Service struct {
 	Interval       time.Duration
 	Threshold      int
 	UnhealthyCount int
+	IsHealthy      bool
 }
 
 func (s *Service) Check() healthcheck.HealthCheckResult {
-	return s.Checker.CheckHealth()
+	status := s.Checker.CheckHealth()
+
+	log.Printf("Service %s: %+v", s.Name, status)
+
+	return status
 }

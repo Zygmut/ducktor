@@ -2,9 +2,7 @@ package healthcheck
 
 import (
 	"fmt"
-	"log"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -17,27 +15,25 @@ type HTTPChecker struct {
 }
 
 func (h *HTTPChecker) CheckHealth() HealthCheckResult {
-	url := fmt.Sprintf("%s://%s:%s/%s", h.Protocol, h.Host, strconv.Itoa(h.Port), h.Endpoint)
+	url := fmt.Sprintf("%s://%s:%d/%s", h.Protocol, h.Host, h.Port, h.Endpoint)
 
-	log.Printf("Url: %s", url)
 	start := time.Now()
 
 	resp, err := http.Get(url)
 	responseTime := time.Since(start)
 
-	log.Printf("Response: %+v", resp)
-
-	status := "healthy"
-	if err != nil || resp.StatusCode != h.Match {
-		status = "unhealthy"
+	if err == nil && resp.StatusCode != h.Match {
+		err = fmt.Errorf("Application returned status code %d but we expected %d", resp.StatusCode, h.Match)
 	}
+
+	isHealthy := err == nil
 
 	if resp != nil {
 		defer resp.Body.Close()
 	}
 
 	return HealthCheckResult{
-		Status:       status,
+		IsHealthy:    isHealthy,
 		ResponseTime: responseTime,
 		Error:        err,
 	}
