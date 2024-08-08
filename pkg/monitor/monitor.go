@@ -14,7 +14,6 @@ type Monitor struct {
 	DefaultThreshold int
 }
 
-// NewMonitor creates a new Monitor instance with the given services and defaults.
 func NewMonitor(configs []config.ServiceConfig, defaultInterval, defaultThreshold int) (*Monitor, error) {
 	services := make([]service.Service, len(configs))
 
@@ -45,7 +44,6 @@ func NewMonitor(configs []config.ServiceConfig, defaultInterval, defaultThreshol
 	return &Monitor{Services: services}, nil
 }
 
-// Run starts monitoring all services.
 func (m *Monitor) Run() {
 	for _, svc := range m.Services {
 		go func(s service.Service) {

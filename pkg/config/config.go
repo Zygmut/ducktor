@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/BurntSushi/toml" // Importing the TOML library
+	"github.com/BurntSushi/toml"
 )
 
 type Config struct {
@@ -26,12 +26,11 @@ func LoadConfig(filePath string) (*Config, error) {
 	return &cfg, nil
 }
 
-// ServiceConfig represents the configuration for a single service.
 type ServiceConfig struct {
 	Name      string
 	Interface string
 	Endpoint  string
-	Match     int // Expected HTTP status code or string for stream
+	Match     int
 	Host      string
 	Port      int
 	Interval  int

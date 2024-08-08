@@ -8,16 +8,14 @@ import (
 	"time"
 )
 
-// HTTPChecker checks the health of an HTTP/HTTPS service.
 type HTTPChecker struct {
 	Endpoint string
 	Host     string
 	Port     int
 	Protocol string
-	Match    int // Expected HTTP status code
+	Match    int
 }
 
-// CheckHealth checks the health of an HTTP/HTTPS service.
 func (h *HTTPChecker) CheckHealth() HealthCheckResult {
 	url := fmt.Sprintf("%s://%s:%s/%s", h.Protocol, h.Host, strconv.Itoa(h.Port), h.Endpoint)
 
