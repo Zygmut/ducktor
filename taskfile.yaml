@@ -1,0 +1,12 @@
+version: '3'
+
+tasks:
+  pre:
+    cmds:
+      - pre-commit run -a
+  build:
+    cmds:
+      - go build -v ducktor.go
+  run :
+    cmds:
+      - go run ducktor.go
