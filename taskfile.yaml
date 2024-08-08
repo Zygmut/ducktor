@@ -1,12 +1,45 @@
 version: '3'
 
+vars:
+  GO_VERSION: "1.19"
+  BINARY_NAME: "ducktor"
+
 tasks:
   pre:
+    desc: "Run Pre-commit"
     cmds:
       - pre-commit run -a
+
+  init:
+    desc: "Initialize Go modules"
+    cmds:
+      - go mod tidy
+
   build:
+    desc: "Build the Go application"
     cmds:
-      - go build -v ducktor.go
-  run :
+      - go build -o ./bin/{{.BINARY_NAME}} ./cmd
+
+  run:
+    desc: "Run the Go application"
     cmds:
-      - go run ducktor.go
+      - go run ./cmd/main.go
+
+  fmt:
+    desc: "Format Go code"
+    cmds:
+      - gofmt -w .
+
+  clean:
+    desc: "Clean up build artifacts"
+    cmds:
+      - rm -rf ./bin
+
+  all:
+    desc: "Run all build tasks (init, fmt, lint, build)"
+    cmds:
+      - task init
+      - task fmt
+      - task build
+      - ./bin/ducktor
+      - task clean
