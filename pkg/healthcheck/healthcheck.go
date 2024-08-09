@@ -1,10 +1,21 @@
 package healthcheck
 
 import (
-	"ducktor/pkg/config"
 	"fmt"
 	"time"
 )
+
+type HealthCheck struct {
+	Name               string
+	Interface          string
+	Host               string
+	Port               int
+	Endpoint           string
+	HealthyThreshold   int
+	UnHealthyThreshold int
+	Interval           int
+	Match              int
+}
 
 type HealthChecker interface {
 	CheckHealth() HealthCheckResult
@@ -16,7 +27,7 @@ type HealthCheckResult struct {
 	Error        error
 }
 
-func NewHealthChecker(config config.ServiceConfig) (HealthChecker, error) {
+func NewHealthChecker(config HealthCheck) (HealthChecker, error) {
 	switch config.Interface {
 	case "http", "https":
 		return &HTTPChecker{

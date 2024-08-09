@@ -19,11 +19,11 @@ func main() {
 
 	log.Println("Loaded configuration:")
 
-	for _, service := range cfg.Services {
+	for _, service := range cfg.HealthChecks {
 		log.Printf("%+v", service)
 	}
 
-	m, err := monitor.NewMonitor(cfg.Services, cfg.DefaultInterval, cfg.DefaultThreshold)
+	m, err := monitor.NewMonitor(cfg.HealthChecks)
 
 	if err != nil {
 		log.Fatalf("Error while creating Monitor: %s", err)

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"ducktor/pkg/healthcheck"
 	"fmt"
 	"os"
 
@@ -8,10 +9,8 @@ import (
 )
 
 type Config struct {
-	DefaultInterval  int             `toml:"default_interval"`
-	DefaultThreshold int             `toml:"default_threshold"`
-	Port             int             `toml:"port"`
-	Services         []ServiceConfig `toml:"services"`
+	Port         int                       `toml:"port"`
+	HealthChecks []healthcheck.HealthCheck `toml:"healthcheck"`
 }
 
 func LoadConfig(filePath string) (*Config, error) {
@@ -25,15 +24,4 @@ func LoadConfig(filePath string) (*Config, error) {
 	}
 
 	return &cfg, nil
-}
-
-type ServiceConfig struct {
-	Name      string
-	Interface string
-	Endpoint  string
-	Match     int
-	Host      string
-	Port      int
-	Interval  int
-	Threshold int
 }

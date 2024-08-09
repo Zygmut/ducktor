@@ -1,32 +1,21 @@
-default_interval = 10
-
-# Consecutive failures to mark a service as unhealthy
-default_threshold = 3
-
 port = 8000
 
-[[services]]
-name = "A"
-interface = "http"
-port = 8080
-host = "localhost"
-endpoint = "health"
-interval = 3
-threshold = 3
-match = 200
+[[healthcheck]]
+name               = "A"
+interface          = "http"
+host               = "localhost"
+port               = 8080
+endpoint           = "health"
+match              = 200
+interval           = 3
+healthyThreshold   = 10
+unHealthyThreshold = 5
 
-[[services]]
-name = "B"
-interface = "http"
-endpoint = "localhost:8081/health"
-interval = 10
-threshold = 3
-match = 503
-
-[[services]]
-name = "C"
-interface = "http"
-endpoint = "localhost:8082/health"
-interval = 5
-threshold = 2
-match = 403
+[[healthcheck]]
+name               = "Google"
+interface          = "http"
+host               = "www.google.com"
+match              = 200
+interval           = 3
+healthyThreshold   = 2
+unHealthyThreshold = 5

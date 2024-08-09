@@ -8,46 +8,34 @@ import (
 	"sync"
 	"time"
 
-	"ducktor/pkg/config"
 	"ducktor/pkg/healthcheck"
 	"ducktor/pkg/service"
 )
 
 type Monitor struct {
-	Services         []service.Service
-	DefaultInterval  int
-	DefaultThreshold int
+	Services []service.Service
 }
 
 var (
 	healthMu sync.Mutex
 )
 
-func NewMonitor(configs []config.ServiceConfig, defaultInterval, defaultThreshold int) (*Monitor, error) {
+func NewMonitor(configs []healthcheck.HealthCheck) (*Monitor, error) {
 	services := make([]service.Service, len(configs))
 
 	for i, config := range configs {
 		checker, err := healthcheck.NewHealthChecker(config)
 		if err != nil {
-			return nil, fmt.Errorf("Error while creating HealthChecker: %s", err)
-		}
-
-		interval := config.Interval
-		if interval == 0 {
-			interval = defaultInterval
-		}
-
-		threshold := config.Threshold
-		if threshold == 0 {
-			threshold = defaultThreshold
+			return nil, fmt.Errorf("error while creating HealthChecker: %s", err)
 		}
 
 		services[i] = service.Service{
-			Name:      config.Name,
-			Checker:   checker,
-			Interval:  time.Duration(interval) * time.Second,
-			Threshold: threshold,
-			IsHealthy: false,
+			Name:               config.Name,
+			Checker:            checker,
+			Interval:           time.Duration(config.Interval) * time.Second,
+			UnHealthyThreshold: config.UnHealthyThreshold,
+			HealthyThreshold:   config.HealthyThreshold,
+			IsHealthy:          false,
 		}
 	}
 
@@ -56,45 +44,25 @@ func NewMonitor(configs []config.ServiceConfig, defaultInterval, defaultThreshol
 
 func health(m Monitor) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		allHealthy := true
+		status := http.StatusOK
 
-		healthMu.Lock()
-
-		for _, svc := range m.Services {
-			if !svc.IsHealthy {
-				allHealthy = false
-				break
-			}
-		}
-
-		healthMu.Unlock()
-
-		if allHealthy {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
-		w.WriteHeader(http.StatusServiceUnavailable)
-	}
-}
-
-func status(m Monitor) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
 		response := make(map[string]string)
 
 		healthMu.Lock()
+		defer healthMu.Unlock()
 
 		for _, svc := range m.Services {
-			if svc.IsHealthy {
-				response[svc.Name] = "OK"
-			} else {
+			if !svc.IsHealthy {
+				status = http.StatusServiceUnavailable
 				response[svc.Name] = "KO"
+			} else {
+				response[svc.Name] = "OK"
 			}
 		}
 
-		healthMu.Unlock()
+		w.WriteHeader(status)
 
 		json.NewEncoder(w).Encode(response)
 	}
@@ -102,7 +70,6 @@ func status(m Monitor) http.HandlerFunc {
 
 func serve(m *Monitor, port int) {
 	http.HandleFunc("/health", health(*m))
-	http.HandleFunc("/status", status(*m))
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 
@@ -121,12 +88,20 @@ func (m *Monitor) Run(port int) {
 
 				if result.IsHealthy {
 					s.UnhealthyCount = 0
-					s.IsHealthy = true
+					s.HealthyCount++
+
+					if s.HealthyCount >= s.HealthyThreshold {
+						log.Printf("Service %s is healthy (%d consecutive successes)\n", s.Name, s.HealthyCount)
+						s.IsHealthy = true
+					}
 
 				} else {
+					s.HealthyCount = 0
 					s.UnhealthyCount++
-					if s.UnhealthyCount >= s.Threshold {
+
+					if s.UnhealthyCount >= s.UnHealthyThreshold {
 						log.Printf("Service %s is unhealthy (%d consecutive failures)\n", s.Name, s.UnhealthyCount)
+						s.IsHealthy = false
 					}
 				}
 
