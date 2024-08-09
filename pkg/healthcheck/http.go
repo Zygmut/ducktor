@@ -19,25 +19,22 @@ type HTTPChecker struct {
 func (h *HTTPChecker) CheckHealth() HealthCheckResult {
 	// url := fmt.Sprintf("%s://%s:%d/%s", h.Protocol, h.Host, h.Port, h.Endpoint)
 
-	builder := strings.Builder{}
+	url := strings.Builder{}
 
-	builder.WriteString(h.Protocol)
-	builder.WriteString("://")
-	builder.WriteString(h.Host)
+	url.WriteString(h.Protocol)
+	url.WriteString("://")
+	url.WriteString(h.Host)
 	if h.Port != 0 {
-		builder.WriteString(":")
-		builder.WriteString(strconv.Itoa(h.Port))
+		url.WriteString(":")
+		url.WriteString(strconv.Itoa(h.Port))
 	}
 	if h.Endpoint != "" {
-		builder.WriteString("/")
-		builder.WriteString(h.Endpoint)
+		url.WriteString("/")
+		url.WriteString(h.Endpoint)
 	}
 
-	url := builder.String()
-
 	start := time.Now()
-
-	resp, err := http.Get(url)
+	resp, err := http.Get(url.String())
 	responseTime := time.Since(start)
 
 	if err == nil && resp.StatusCode != h.Match {

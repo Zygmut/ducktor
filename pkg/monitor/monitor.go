@@ -3,7 +3,6 @@ package monitor
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -91,7 +90,6 @@ func (m *Monitor) Run(port int) {
 					s.HealthyCount++
 
 					if s.HealthyCount >= s.HealthyThreshold {
-						log.Printf("Service %s is healthy (%d consecutive successes)\n", s.Name, s.HealthyCount)
 						s.IsHealthy = true
 					}
 
@@ -100,7 +98,6 @@ func (m *Monitor) Run(port int) {
 					s.UnhealthyCount++
 
 					if s.UnhealthyCount >= s.UnHealthyThreshold {
-						log.Printf("Service %s is unhealthy (%d consecutive failures)\n", s.Name, s.UnhealthyCount)
 						s.IsHealthy = false
 					}
 				}
