@@ -5,6 +5,9 @@ import (
 	"ducktor/pkg/monitor"
 	"flag"
 	"log"
+	"net/http"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -29,5 +32,8 @@ func main() {
 		log.Fatalf("Error while creating Monitor: %s", err)
 	}
 
-	m.Run(cfg.Port)
+	go m.Run(cfg.Port)
+
+	http.Handle("/metrics", promhttp.Handler())
+	http.ListenAndServe(":2112", nil)
 }

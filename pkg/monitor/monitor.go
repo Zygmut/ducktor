@@ -9,10 +9,15 @@ import (
 
 	"ducktor/pkg/healthcheck"
 	"ducktor/pkg/service"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 type Monitor struct {
-	Services []service.Service
+	Services        []service.Service
+	SuccessCounters []prometheus.Counter
+	FailedCounters  []prometheus.Counter
 }
 
 var (
@@ -21,6 +26,8 @@ var (
 
 func NewMonitor(configs []healthcheck.HealthCheck) (*Monitor, error) {
 	services := make([]service.Service, len(configs))
+	success := make([]prometheus.Counter, len(configs))
+	fail := make([]prometheus.Counter, len(configs))
 
 	for i, config := range configs {
 		checker, err := healthcheck.NewHealthChecker(config)
@@ -36,9 +43,24 @@ func NewMonitor(configs []healthcheck.HealthCheck) (*Monitor, error) {
 			HealthyThreshold:   config.HealthyThreshold,
 			IsHealthy:          false,
 		}
+
+		success[i] = promauto.NewCounter(
+			prometheus.CounterOpts{
+				Name: fmt.Sprintf("ducktor_%s_total_successes", config.Name),
+				Help: fmt.Sprintf("The total number of health check successes for service %s.", config.Name),
+			},
+		)
+
+		fail[i] = promauto.NewCounter(
+			prometheus.CounterOpts{
+				Name: fmt.Sprintf("ducktor_%s_total_failures", config.Name),
+				Help: fmt.Sprintf("The total number of health check failures for service %s.", config.Name),
+			},
+		)
+
 	}
 
-	return &Monitor{Services: services}, nil
+	return &Monitor{Services: services, SuccessCounters: success, FailedCounters: fail}, nil
 }
 
 func health(m Monitor) http.HandlerFunc {
@@ -78,8 +100,10 @@ func (m *Monitor) Run(port int) {
 
 	for idx := range m.Services {
 		svc := &m.Services[idx]
+		succ := m.SuccessCounters[idx]
+		fail := m.FailedCounters[idx]
 
-		go func(s *service.Service) {
+		go func(s *service.Service, succ prometheus.Counter, fail prometheus.Counter) {
 			for {
 				result := s.Check()
 
@@ -91,6 +115,7 @@ func (m *Monitor) Run(port int) {
 
 					if s.HealthyCount >= s.HealthyThreshold {
 						s.IsHealthy = true
+						succ.Inc()
 					}
 
 				} else {
@@ -99,6 +124,7 @@ func (m *Monitor) Run(port int) {
 
 					if s.UnhealthyCount >= s.UnHealthyThreshold {
 						s.IsHealthy = false
+						fail.Inc()
 					}
 				}
 
@@ -106,7 +132,7 @@ func (m *Monitor) Run(port int) {
 
 				time.Sleep(s.Interval)
 			}
-		}(svc)
+		}(svc, succ, fail)
 	}
 
 	// Keep the main function alive

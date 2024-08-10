@@ -17,6 +17,8 @@ pkgs.mkShellNoCC {
     alias t=task
 
     pre-commit install
+
+    task init
   '';
 
 }
