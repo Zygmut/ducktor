@@ -3,6 +3,7 @@
 Ducktor (pronounced as dʌk.tər) is a Go application designed to manage and monitor the health of various services. It supports multiple health check interfaces, including HTTP/HTTPS, TCP, and more.
 
 ## Table of Contents
+
 [Installation](#installation)
 [Usage](#usage)
 [Configuration]()
@@ -13,6 +14,7 @@ Ducktor (pronounced as dʌk.tər) is a Go application designed to manage and mon
 [License]()
 
 ## Installation
+
 1. Clone the repository:
 
 ```bash
@@ -40,6 +42,7 @@ Run Ducktor with a configuration file:
 ```bash
 ./ducktor -config config.toml
 ```
+
 ## Command-line Arguments
 
 - `config`: Path to the TOML configuration file.
@@ -61,4 +64,5 @@ More interfaces like TCP, GRPC, systemd, ICMP, and custom scripts can be added a
 Contributions are welcome! Please fork the repository and submit a pull request.
 
 ## License
+
 This project is licensed under the MIT License. See the LICENSE file for details.
