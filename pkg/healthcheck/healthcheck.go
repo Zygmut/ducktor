@@ -38,6 +38,6 @@ func NewHealthChecker(config HealthCheck) (HealthChecker, error) {
 			Match:    config.Match,
 		}, nil
 	default:
-		return nil, fmt.Errorf("unsupported protocol: %s", config.Interface)
+		return nil, fmt.Errorf("unsupported interface: %s", config.Interface)
 	}
 }
