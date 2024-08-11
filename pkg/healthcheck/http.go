@@ -17,8 +17,6 @@ type HTTPChecker struct {
 }
 
 func (h *HTTPChecker) CheckHealth() HealthCheckResult {
-	// url := fmt.Sprintf("%s://%s:%d/%s", h.Protocol, h.Host, h.Port, h.Endpoint)
-
 	url := strings.Builder{}
 
 	url.WriteString(h.Protocol)

@@ -2,6 +2,7 @@ package healthcheck
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -28,7 +29,7 @@ type HealthCheckResult struct {
 }
 
 func NewHealthChecker(config HealthCheck) (HealthChecker, error) {
-	switch config.Interface {
+	switch strings.ToLower(config.Interface) {
 	case "http", "https":
 		return &HTTPChecker{
 			Endpoint: config.Endpoint,
@@ -36,6 +37,11 @@ func NewHealthChecker(config HealthCheck) (HealthChecker, error) {
 			Port:     config.Port,
 			Protocol: config.Interface,
 			Match:    config.Match,
+		}, nil
+	case "tcp":
+		return &TCPChecker{
+			Host: config.Host,
+			Port: config.Port,
 		}, nil
 	default:
 		return nil, fmt.Errorf("unsupported interface: %s", config.Interface)

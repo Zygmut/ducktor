@@ -17,5 +17,5 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	http.HandleFunc("/health", healthHandler)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8001", nil)
 }
