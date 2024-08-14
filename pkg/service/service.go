@@ -2,7 +2,8 @@ package service
 
 import (
 	"ducktor/pkg/healthcheck"
-	"log"
+	"fmt"
+	"log/slog"
 	"time"
 )
 
@@ -20,7 +21,7 @@ type Service struct {
 func (s *Service) Check() healthcheck.HealthCheckResult {
 	status := s.Checker.CheckHealth()
 
-	log.Printf("Service %s healthcheck: %+v", s.Name, status)
+	slog.Info(fmt.Sprintf("Service %s healthcheck: %+v", s.Name, status))
 
 	return status
 }

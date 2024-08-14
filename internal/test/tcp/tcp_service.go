@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
 )
 
@@ -13,17 +13,20 @@ func handleConnection(conn net.Conn) {
 	fmt.Println("Handled connection")
 }
 
-func startServer(port string) {
+func startServer(port string) error {
 	listener, err := net.Listen("tcp", ":"+port)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error(fmt.Sprintf("Error while creating the tcp listener on port %s: %s", port, err))
+		return err
 	}
+
 	defer listener.Close()
 
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(fmt.Sprintf("Error while accepting traffic: %s", err))
+			return err
 		}
 		go handleConnection(conn)
 	}
