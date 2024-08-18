@@ -15,12 +15,12 @@
 
 <body data-theme="dracula">
     <div class="container mx-auto max-w-6xl p-8">
-        <nav class="mb-16 navbar shadow-lg bg-neutral text-neutral-content rounded-box">
+        <nav class="mb-16 p-4 navbar shadow-lg bg-neutral text-neutral-content rounded-box">
             <div class="flex-none">
-                <span class="text-4xl pb-1">🩻</span>
+                <span class="text-4xl pb-1">🦆</span>
             </div>
             <div class="flex-1 px-2 mx-2">
-                <span class="text-lg font-bold">Ducktor</span>
+                <span class="text-2xl font-bold">Ducktor</span>
             </div>
         </nav>
 
@@ -48,8 +48,8 @@
                 <div class="flex items-center justify-between">
                     <!-- Health Status Circle -->
                     <div class="flex items-center gap-x-4">
-                        <h2 class="text-xl font-semibold">Service Name</h1>
-                    <span class="text-sm">HTTP</span>
+                        <h2 class="text-xl font-semibold">Service Name</h2>
+                        <span class="text-sm">HTTP</span>
                     </div>
 
                     <!-- Interface Used -->
@@ -64,15 +64,6 @@
                 <p class="text-sm">
                     Latency: <span class="font-medium">123ms</span>
                 </p>
-
-                <!-- Unhealthy Error Dropdown (conditionally visible) -->
-                <div class="mt-4" x-data="{ open: false }" x-show="!open">
-                    <button @click="open = !open" class="text-red-500 text-sm font-medium">Show Error
-                        Details</button>
-                    <div x-show="open" class="mt-2 bg-red-100 text-red-800 p-3 rounded-md text-sm">
-                        <p>Error: Expected status code 200 but got 500.</p>
-                    </div>
-                </div>
             </div>
 
         </main>

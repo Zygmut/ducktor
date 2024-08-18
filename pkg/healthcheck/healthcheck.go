@@ -9,13 +9,14 @@ import (
 type HealthCheck struct {
 	Name               string
 	Interface          string
-	Host               string
-	Port               int
-	Endpoint           string
 	HealthyThreshold   int
 	UnHealthyThreshold int
 	Interval           int
-	Match              int
+
+	Host     string
+	Port     int
+	Endpoint string
+	Match    int
 }
 
 type HealthChecker interface {

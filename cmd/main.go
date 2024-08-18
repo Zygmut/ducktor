@@ -26,8 +26,7 @@ func main() {
 	slog.Info("Loaded configuration:")
 
 	for _, service := range cfg.HealthChecks {
-		slog.Error(fmt.Sprintf("%+v", service))
-		os.Exit(1)
+		slog.Info(fmt.Sprintf("%+v", service))
 	}
 
 	m, err := monitor.NewMonitor(cfg.HealthChecks)

@@ -1,21 +1,23 @@
 package monitor
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"sync"
-	"time"
-
 	"ducktor/pkg/healthcheck"
 	"ducktor/pkg/metrics"
 	"ducktor/pkg/service"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 type Monitor struct {
 	Services        []service.Service
+	LastChecks      []healthcheck.HealthCheckResult
 	SuccessCounters []prometheus.Counter
 	FailedCounters  []prometheus.Counter
 	HealthStatus    []prometheus.Summary
@@ -27,6 +29,7 @@ var (
 
 func NewMonitor(configs []healthcheck.HealthCheck) (*Monitor, error) {
 	services := make([]service.Service, len(configs))
+	lastChecks := make([]healthcheck.HealthCheckResult, len(configs))
 
 	for i, config := range configs {
 		checker, err := healthcheck.NewHealthChecker(config)
@@ -42,9 +45,65 @@ func NewMonitor(configs []healthcheck.HealthCheck) (*Monitor, error) {
 			HealthyThreshold:   config.HealthyThreshold,
 			IsHealthy:          false,
 		}
+
+		lastChecks[i] = healthcheck.HealthCheckResult{IsHealthy: false}
+
 	}
 
-	return &Monitor{Services: services}, nil
+	return &Monitor{Services: services, LastChecks: lastChecks}, nil
+}
+
+func (m *Monitor) Run(port int) {
+
+	go serve(m, port)
+
+	for idx := range m.Services {
+		go func(idx int) {
+			for {
+				s := &m.Services[idx]
+
+				result := s.Check()
+
+				healthMu.Lock()
+
+				m.LastChecks[idx] = result
+
+				if result.IsHealthy {
+					s.UnhealthyCount = 0
+					s.HealthyCount++
+
+					if s.HealthyCount >= s.HealthyThreshold {
+						s.IsHealthy = true
+						metrics.Success.With(prometheus.Labels{"service_name": s.Name}).Inc()
+						metrics.Health.With(prometheus.Labels{"service_name": s.Name}).Set(1)
+					}
+
+				} else {
+					s.HealthyCount = 0
+					s.UnhealthyCount++
+
+					if s.UnhealthyCount >= s.UnHealthyThreshold {
+						s.IsHealthy = false
+						metrics.Fail.With(prometheus.Labels{"service_name": s.Name}).Inc()
+						metrics.Health.With(prometheus.Labels{"service_name": s.Name}).Set(0)
+					}
+				}
+
+				healthMu.Unlock()
+
+				time.Sleep(s.Interval)
+			}
+		}(idx)
+	}
+
+	// Keep the main function alive
+	select {}
+}
+
+func serve(m *Monitor, port int) {
+	http.HandleFunc("/health", health(*m))
+	http.HandleFunc("/", webView(*m))
+	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 
 func health(m Monitor) http.HandlerFunc {
@@ -73,52 +132,130 @@ func health(m Monitor) http.HandlerFunc {
 	}
 }
 
-func serve(m *Monitor, port int) {
-	http.HandleFunc("/health", health(*m))
-	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
-}
+func webView(m Monitor) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		webpage := PAGE_TEMPLATE
 
-func (m *Monitor) Run(port int) {
+		healthyServices := 0
+		unHealthyServices := 0
 
-	go serve(m, port)
-
-	for idx := range m.Services {
-		svc := &m.Services[idx]
-
-		go func(s *service.Service) {
-			for {
-				result := s.Check()
-
-				healthMu.Lock()
-
-				if result.IsHealthy {
-					s.UnhealthyCount = 0
-					s.HealthyCount++
-
-					if s.HealthyCount >= s.HealthyThreshold {
-						s.IsHealthy = true
-						metrics.Success.With(prometheus.Labels{"service_name": svc.Name}).Inc()
-						metrics.Health.With(prometheus.Labels{"service_name": svc.Name}).Set(1)
-					}
-
-				} else {
-					s.HealthyCount = 0
-					s.UnhealthyCount++
-
-					if s.UnhealthyCount >= s.UnHealthyThreshold {
-						s.IsHealthy = false
-						metrics.Fail.With(prometheus.Labels{"service_name": svc.Name}).Inc()
-						metrics.Health.With(prometheus.Labels{"service_name": svc.Name}).Set(0)
-					}
-				}
-
-				healthMu.Unlock()
-
-				time.Sleep(s.Interval)
+		for _, check := range m.Services {
+			if check.IsHealthy {
+				healthyServices++
+			} else {
+				unHealthyServices++
 			}
-		}(svc)
-	}
+		}
 
-	// Keep the main function alive
-	select {}
+		ducktorStatus := "OK"
+		if unHealthyServices > 0 {
+			ducktorStatus = "KO"
+		}
+
+		checks := make([]string, len(m.Services))
+		for idx := range m.Services {
+			checks[idx] = serviceHtml(m.Services[idx], m.LastChecks[idx])
+		}
+
+		services := strings.Join(checks, "\n")
+
+		webpage = strings.ReplaceAll(webpage, "{{total_healthy}}", strconv.Itoa(healthyServices))
+		webpage = strings.ReplaceAll(webpage, "{{total_unhealthy}}", strconv.Itoa(unHealthyServices))
+		webpage = strings.ReplaceAll(webpage, "{{ducktor_status}}", ducktorStatus)
+		webpage = strings.ReplaceAll(webpage, "{{services}}", services)
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "%s", webpage)
+	}
 }
+
+func serviceHtml(s service.Service, h healthcheck.HealthCheckResult) string {
+	service := SERVICE_TEMPLATE
+	color := "error"
+	status := "down"
+	if s.IsHealthy {
+		color = "success"
+		status = "up"
+	}
+	service = strings.ReplaceAll(service, "{{name}}", s.Name)
+	service = strings.ReplaceAll(service, "{{latency}}", h.ResponseTime.String())
+	service = strings.ReplaceAll(service, "{{color}}", color)
+	service = strings.ReplaceAll(service, "{{status}}", status)
+	service = strings.ReplaceAll(service, "{{interface}}", "HTTP")
+
+	return service
+}
+
+const (
+	SERVICE_TEMPLATE = `
+            <div class="card-bordered bg-base-300 w-full rounded-lg overflow-hidden border-{{color}} p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-xl font-semibold">{{name}}</h2>
+
+                    <i class="text-xl text-{{color}} fa-solid fa-thumbs-{{status}}"></i>
+                </div>
+                <!-- Extra Info Depending on Interface -->
+                <p>
+                    Endpoint: <span class="font-medium">http://localhost:8080/health</span>
+                </p>
+
+                <!-- Latency Info -->
+                <p class="text-sm">
+                    Latency: <span class="font-medium">{{latency}}</span>
+                </p>
+            </div>`
+	PAGE_TEMPLATE = `<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Ducktor</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+        integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body data-theme="dracula">
+    <div class="container mx-auto max-w-6xl p-8">
+        <nav class="mb-16 p-4 navbar shadow-lg bg-neutral text-neutral-content rounded-box">
+            <div class="flex-none">
+                <span class="text-4xl pb-1">🦆</span>
+            </div>
+            <div class="flex-1 px-2 mx-2">
+                <span class="text-2xl font-bold">Ducktor</span>
+            </div>
+        </nav>
+
+        <summary class="mb-8 min-v-screen flex flex-col items-center">
+            <div class="stats shadow w-full bg-base-300 stats-vertical md:stats-horizontal">
+                <div class="stat">
+                    <div class="stat-title">Total Healthy Checks</div>
+                    <div class="stat-value text-success">{{total_healthy}}</div>
+                </div>
+
+                <div class="stat">
+                    <div class="stat-title">Total Unhealthy Checks</div>
+                    <div id="total_unhealthy" class="stat-value text-error">{{total_unhealthy}}</div>
+                </div>
+
+                <div class="stat">
+                    <div class="stat-title">Current Status</div>
+                    <div id="current_status" class="stat-value text-accent">{{ducktor_status}}</div>
+                </div>
+            </div>
+        </summary>
+
+        <main class="min-h-screen flex flex-col items-center gap-4">
+            {{services}}
+        </main>
+    </div>
+</body>
+
+</html>
+`
+)
