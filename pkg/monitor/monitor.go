@@ -175,9 +175,9 @@ func health(m Monitor) http.HandlerFunc {
 
 func webView(m Monitor, port int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
+
 		fmt.Fprintf(w, "%s", string(HTML_CONTENT))
 	}
 }

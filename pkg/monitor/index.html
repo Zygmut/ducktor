@@ -45,61 +45,62 @@
 
         <main id="services" class="min-h-screen flex flex-col items-center gap-4">
         </main>
-    </div>
-    <script>
-        document.addEventListener("DOMContentLoaded", async () => {
-            fetchServiceStatus()
 
-            // Refresh every second (1000 ms)
-            setInterval(fetchServiceStatus, 1000);
-        });
+        <script>
+            document.addEventListener("DOMContentLoaded", async () => {
+                fetchServiceStatus()
 
-        function serviceComponent(service) {
-            let color = service.status == "OK" ? "success" : "error"
-            let status = service.status == "OK" ? "up" : "down"
+                // Refresh every second (1000 ms)
+                setInterval(fetchServiceStatus, 1000);
+            });
 
-            return `
+            function serviceComponent(service) {
+                let color = service.status == "OK" ? "success" : "error"
+                let status = service.status == "OK" ? "up" : "down"
+
+                return `
             <div class="card-bordered bg-base-300 w-full rounded-lg overflow-hidden border-${color} p-4">
                 <div class="flex items-center justify-between mb-2">
-                    <h2 class="text-xl font-semibold">${service.name}</h2>
+                    <div class="flex items-center justify-between gap-x-2">
+                        <i class="text-xl text-${color} fa-solid fa-thumbs-${status}"></i>
+                        <h2 class="text-xl font-semibold">${service.name}</h2>
+                    </div>
 
-                    <i class="text-xl text-${color} fa-solid fa-thumbs-${status}"></i>
                 </div>
-                <!-- Extra Info Depending on Interface -->
+
                 <p>
                     Endpoint: <span class="font-medium">http://localhost:8080/health</span>
                 </p>
 
-                <!-- Latency Info -->
                 <p class="text-sm">
                     Latency: <span class="font-medium">${service.latency}</span>
                 </p>
             </div>`
-        }
-
-        async function fetchServiceStatus() {
-            response = await fetch('http://localhost:8000/info')
-                .then(response => response.json())
-
-            let total_healthy = 0
-            let total_unhealthy = 0
-            let services = []
-            for (let i = 0; i < response.length; i++) {
-                if (response[i].status == "OK") {
-                    total_healthy++
-                } else {
-                    total_unhealthy++
-                }
-                services.push(serviceComponent(response[i]))
             }
 
-            document.getElementById('total_healthy').innerText = total_healthy;
-            document.getElementById('total_unhealthy').innerText = total_unhealthy;
-            document.getElementById('ducktor_status').innerText = total_unhealthy > 0 ? "KO" : "OK";
-            document.getElementById('services').innerHTML = services.join("\n")
-        }
+            async function fetchServiceStatus() {
+                response = await fetch('http://localhost:8000/info')
+                    .then(response => response.json())
 
-    </script>
+                let total_healthy = 0
+                let total_unhealthy = 0
+                let services = []
+                for (let i = 0; i < response.length; i++) {
+                    if (response[i].status == "OK") {
+                        total_healthy++
+                    } else {
+                        total_unhealthy++
+                    }
+                    services.push(serviceComponent(response[i]))
+                }
+
+                document.getElementById('total_healthy').innerText = total_healthy;
+                document.getElementById('total_unhealthy').innerText = total_unhealthy;
+                document.getElementById('ducktor_status').innerText = total_unhealthy > 0 ? "KO" : "OK";
+                document.getElementById('services').innerHTML = services.join("\n")
+            }
+
+        </script>
 </body>
 
 </html>
