@@ -101,9 +101,48 @@ func (m *Monitor) Run(port int) {
 }
 
 func serve(m *Monitor, port int) {
+
 	http.HandleFunc("/health", health(*m))
-	http.HandleFunc("/", webView(*m))
+	http.HandleFunc("/info", info(*m))
+	http.HandleFunc("/", webView(*m, port))
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+}
+
+func info(m Monitor) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// CORS STUFF
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		// Handle preflight requests
+		if r.Method == "OPTIONS" {
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+
+		services := []map[string]string{}
+
+		healthMu.Lock()
+		defer healthMu.Unlock()
+
+		for idx, svc := range m.Services {
+			serviceStatus := "OK"
+			if !svc.IsHealthy {
+				serviceStatus = "KO"
+			}
+
+			services = append(services, map[string]string{
+				"name":    svc.Name,
+				"latency": m.LastChecks[idx].ResponseTime.String(),
+				"status":  serviceStatus,
+			})
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(services)
+	}
 }
 
 func health(m Monitor) http.HandlerFunc {
@@ -132,7 +171,7 @@ func health(m Monitor) http.HandlerFunc {
 	}
 }
 
-func webView(m Monitor) http.HandlerFunc {
+func webView(m Monitor, port int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		webpage := PAGE_TEMPLATE
 
@@ -254,6 +293,30 @@ const (
             {{services}}
         </main>
     </div>
+<script>
+  function fetchServiceStatus() {
+    fetch('localhost:{{port}}/info')
+      .then(response => response.json())
+      .then(data => {
+        // Update the page content with the new status
+        document.getElementById('service-name').innerText = data.name;
+        document.getElementById('service-latency').innerText = data.latency;
+        document.getElementById('service-status').innerText = data.status;
+        document.getElementById('service-interface').innerText = data.interface;
+
+        // Update color based on status
+        if (data.status === 'up') {
+          document.getElementById('service-status').className = 'text-green-500';
+        } else {
+          document.getElementById('service-status').className = 'text-red-500';
+        }
+      })
+      .catch(error => console.error('Error fetching service status:', error));
+  }
+
+  // Refresh every second (1000 ms)
+  setInterval(fetchServiceStatus, 1000);
+</script>
 </body>
 
 </html>

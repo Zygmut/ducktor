@@ -28,46 +28,74 @@
             <div class="stats shadow w-full bg-base-300 stats-vertical md:stats-horizontal">
                 <div class="stat">
                     <div class="stat-title">Total Healthy Checks</div>
-                    <div id="total_healthy" class="stat-value text-success">3</div>
+                    <div id="total_healthy" class="stat-value text-success">0</div>
                 </div>
 
                 <div class="stat">
                     <div class="stat-title">Total Unhealthy Checks</div>
-                    <div id="total_unhealthy" class="stat-value text-error">2</div>
+                    <div id="total_unhealthy" class="stat-value text-error">0</div>
                 </div>
 
                 <div class="stat">
                     <div class="stat-title">Current Status</div>
-                    <div id="current_status" class="stat-value text-accent">KO</div>
+                    <div id="ducktor_status" class="stat-value text-accent"></div>
                 </div>
             </div>
         </summary>
 
-        <main class="min-h-screen flex flex-col items-center gap-4">
-            <div class="card-bordered bg-base-300 w-full rounded-lg overflow-hidden border-success p-4">
-                <div class="flex items-center justify-between">
-                    <!-- Health Status Circle -->
-                    <div class="flex items-center gap-x-4">
-                        <h2 class="text-xl font-semibold">Service Name</h2>
-                        <span class="text-sm">HTTP</span>
-                    </div>
+        <main id="services" class="min-h-screen flex flex-col items-center gap-4">
+        </main>
+    </div>
+    <script>
+        function serviceComponent(service) {
+            let color = service.status == "OK" ? "success" : "error"
+            let status = service.status == "OK" ? "up" : "down"
 
-                    <!-- Interface Used -->
-                    <i class="text-xl text-success fa-solid fa-thumbs-up"></i>
+            return `
+            <div class="card-bordered bg-base-300 w-full rounded-lg overflow-hidden border-${color} p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-xl font-semibold">${service.name}</h2>
+
+                    <i class="text-xl text-${color} fa-solid fa-thumbs-${status}"></i>
                 </div>
                 <!-- Extra Info Depending on Interface -->
-                <p class="mt-3">
+                <p>
                     Endpoint: <span class="font-medium">http://localhost:8080/health</span>
                 </p>
 
                 <!-- Latency Info -->
                 <p class="text-sm">
-                    Latency: <span class="font-medium">123ms</span>
+                    Latency: <span class="font-medium">${service.latency}</span>
                 </p>
-            </div>
+            </div>`
+        }
 
-        </main>
-    </div>
+        async function fetchServiceStatus() {
+            response = await fetch('http://localhost:8000/info')
+                .then(response => response.json())
+
+            let total_healthy = 0
+            let total_unhealthy = 0
+            let services = []
+            for (let i = 0; i < response.length; i++) {
+                if (response[i].status == "OK"){
+                    total_healthy++
+                }else{
+                    total_unhealthy++
+                }
+                services.push(serviceComponent(response[i]))
+            }
+
+            document.getElementById('total_healthy').innerText = total_healthy;
+            document.getElementById('total_unhealthy').innerText = total_unhealthy;
+            document.getElementById('ducktor_status').innerText = total_unhealthy > 0 ? "KO" : "OK";
+            document.getElementById('services').innerHTML = services.join("\n")
+        }
+
+        fetchServiceStatus()
+        // Refresh every second (1000 ms)
+        setInterval(fetchServiceStatus, 1000);
+    </script>
 </body>
 
 </html>
