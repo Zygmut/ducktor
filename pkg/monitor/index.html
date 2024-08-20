@@ -47,6 +47,13 @@
         </main>
     </div>
     <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            fetchServiceStatus()
+
+            // Refresh every second (1000 ms)
+            setInterval(fetchServiceStatus, 1000);
+        });
+
         function serviceComponent(service) {
             let color = service.status == "OK" ? "success" : "error"
             let status = service.status == "OK" ? "up" : "down"
@@ -78,9 +85,9 @@
             let total_unhealthy = 0
             let services = []
             for (let i = 0; i < response.length; i++) {
-                if (response[i].status == "OK"){
+                if (response[i].status == "OK") {
                     total_healthy++
-                }else{
+                } else {
                     total_unhealthy++
                 }
                 services.push(serviceComponent(response[i]))
@@ -92,9 +99,6 @@
             document.getElementById('services').innerHTML = services.join("\n")
         }
 
-        fetchServiceStatus()
-        // Refresh every second (1000 ms)
-        setInterval(fetchServiceStatus, 1000);
     </script>
 </body>
 
