@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
         integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦆</text></svg>">
+
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -64,22 +66,18 @@
 
                 return `
             <div class="card-bordered bg-base-300 w-full rounded-lg overflow-hidden border-${color} p-4">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="flex items-center justify-between gap-x-2">
+
+                <div class="flex flex-col items-start md:items-center justify-between md:flex-row mb-1">
+                    <div class="min-v-screen flex items-center gap-3">
                         <i class="text-xl text-${color} fa-solid fa-thumbs-${status}"></i>
                         <h2 class="text-xl font-semibold">${service.name}</h2>
                     </div>
 
-                    <div>
-                        <p>${progress_status} Threshold</p>
-                        <progress class="progress progress-${inv_color} w-56" value="${count}" max="${threshold}"></progress>
+                    <div class="min-v-screen">
+                        <progress class="progress progress-${inv_color} w-full" value="${count}" max="${threshold}"></progress>
                     </div>
 
                 </div>
-
-                <p>
-                    Endpoint: <span class="font-medium">http://localhost:8080/health</span>
-                </p>
 
                 <p class="text-sm">
                     Latency: <span class="font-medium">${service.latency}</span>
