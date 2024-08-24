@@ -1,14 +1,23 @@
 port = 8000
 
 [[healthcheck]]
-name               = "A"
+name               = "Service A"
 interface          = "http"
 host               = "localhost"
-port               = 8080
+port               = 8001
 endpoint           = "health"
 match              = 200
 interval           = 3
-healthyThreshold   = 10
+healthyThreshold   = 5
+unHealthyThreshold = 5
+
+[[healthcheck]]
+name               = "Service B"
+interface          = "tcp"
+host               = "localhost"
+port               = 8002
+interval           = 3
+healthyThreshold   = 5
 unHealthyThreshold = 5
 
 [[healthcheck]]
@@ -18,13 +27,4 @@ host               = "www.google.com"
 match              = 200
 interval           = 3
 healthyThreshold   = 2
-unHealthyThreshold = 5
-
-[[healthcheck]]
-name               = "TCP"
-interface          = "tcp"
-host               = "localhost"
-port               = 8002
-interval           = 3
-healthyThreshold   = 5
 unHealthyThreshold = 5
