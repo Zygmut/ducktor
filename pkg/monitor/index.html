@@ -79,7 +79,7 @@
             }
 
             async function fetchServiceStatus() {
-                response = await fetch('http://localhost:8000/info')
+                response = await fetch('http://localhost:{{PORT}}/info')
                     .then(response => response.json())
 
                 let total_healthy = 0

@@ -7,7 +7,10 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -57,6 +60,8 @@ func NewMonitor(configs []healthcheck.HealthCheck) (*Monitor, error) {
 
 func (m *Monitor) Run(port int) {
 
+	HTML_CONTENT = strings.ReplaceAll(HTML_CONTENT, "{{PORT}}", strconv.Itoa(port))
+
 	go serve(m, port)
 
 	for idx := range m.Services {
@@ -103,26 +108,40 @@ func (m *Monitor) Run(port int) {
 }
 
 func serve(m *Monitor, port int) {
+	routes := map[string]http.HandlerFunc{
+		"/":       webView(),
+		"/health": health(*m),
+		"/info":   info(*m),
+	}
 
-	http.HandleFunc("/health", health(*m))
-	http.HandleFunc("/info", info(*m))
-	http.HandleFunc("/", webView(*m, port))
+	for key, value := range routes {
+		slog.Info(fmt.Sprintf("Registered http://localhost:%d%s", port, key))
+		http.HandleFunc(key, value)
+	}
+
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 
 func info(m Monitor) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// CORS STUFF
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-		// Handle preflight requests
+		// Preflight requests
 		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Method `OPTIONS` not implemented"})
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
+		// Headers and CORS stuff
+		headers := map[string]string{
+			"Access-Control-Allow-Origin":  "*",
+			"Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+			"Access-Control-Allow-Headers": "Content-Type",
+			"Content-Type":                 "application/json",
+		}
+
+		for key, value := range headers {
+			w.Header().Set(key, value)
+		}
 
 		services := []map[string]string{}
 
@@ -173,11 +192,10 @@ func health(m Monitor) http.HandlerFunc {
 	}
 }
 
-func webView(m Monitor, port int) http.HandlerFunc {
+func webView() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-
 		fmt.Fprintf(w, "%s", string(HTML_CONTENT))
 	}
 }
