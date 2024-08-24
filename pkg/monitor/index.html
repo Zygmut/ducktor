@@ -59,17 +59,21 @@
             function serviceComponent(service) {
                 let color = service.status == "OK" ? "success" : "error"
                 let inv_color = service.status == "OK" ? "error" : "success"
-                let status = service.status == "OK" ? "up" : "down"
+                let status = service.status == "OK" ? "fa-thumbs-up" : "fa-thumbs-down"
                 let threshold = service.status == "OK" ? service.unhealthy_threshold : service.healthy_threshold
                 let count = service.status == "OK" ? service.unhealthy_count : service.healthy_count
-                let progress_status = service.status == "OK" ? "Unhealthy" : "Healthy"
+
+                if (count > 0) {
+                    status = "fa-question"
+                    color = "warning"
+                }
 
                 return `
             <div class="card-bordered bg-base-300 w-full rounded-lg overflow-hidden border-${color} p-4">
 
                 <div class="flex flex-col items-start md:items-center justify-between md:flex-row mb-1">
                     <div class="min-v-screen flex items-center gap-3">
-                        <i class="text-xl text-${color} fa-solid fa-thumbs-${status}"></i>
+                        <i class="text-xl text-${color} fa-solid ${status}"></i>
                         <h2 class="text-xl font-semibold">${service.name}</h2>
                     </div>
 

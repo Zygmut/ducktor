@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -145,7 +146,7 @@ func info(m Monitor) http.HandlerFunc {
 			w.Header().Set(key, value)
 		}
 
-		services := []map[string]string{}
+		services := []map[string]interface{}{}
 
 		healthMu.Lock()
 		defer healthMu.Unlock()
@@ -156,14 +157,16 @@ func info(m Monitor) http.HandlerFunc {
 				serviceStatus = "KO"
 			}
 
-			services = append(services, map[string]string{
+			services = append(services, map[string]interface{}{
 				"name":                svc.Name,
 				"latency":             m.LastChecks[idx].ResponseTime.String(),
+				"type":                strings.ReplaceAll(reflect.TypeOf(svc.Checker).Elem().Name(), "Checker", ""),
 				"status":              serviceStatus,
-				"healthy_threshold":   strconv.Itoa(svc.HealthyThreshold),
-				"healthy_count":       strconv.Itoa(svc.HealthyCount),
-				"unhealthy_threshold": strconv.Itoa(svc.UnhealthyThreshold),
-				"unhealthy_count":     strconv.Itoa(svc.UnhealthyCount),
+				"healthy_threshold":   svc.HealthyThreshold,
+				"healthy_count":       svc.HealthyCount,
+				"unhealthy_threshold": svc.UnhealthyThreshold,
+				"unhealthy_count":     svc.UnhealthyCount,
+				"interface":           svc.Checker,
 			})
 		}
 
