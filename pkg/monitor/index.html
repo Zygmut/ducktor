@@ -62,6 +62,7 @@
                 let status = service.status == "OK" ? "fa-thumbs-up" : "fa-thumbs-down"
                 let threshold = service.status == "OK" ? service.unhealthy_threshold : service.healthy_threshold
                 let count = service.status == "OK" ? service.unhealthy_count : service.healthy_count
+                let id = crypto.randomUUID()
 
                 if (count > 0) {
                     status = "fa-question"
@@ -69,23 +70,25 @@
                 }
 
                 return `
-            <div class="card-bordered bg-base-300 w-full rounded-lg overflow-hidden border-${color} p-4">
+            <div class="card-bordered bg-base-300 w-full rounded-lg overflow-hidden p-4 border-${color}">
 
-                <div class="flex flex-col items-start md:items-center justify-between md:flex-row mb-1">
+                <div class="flex flex-col items-start md:items-center justify-between md:flex-row">
                     <div class="min-v-screen flex items-center gap-3">
                         <i class="text-xl text-${color} fa-solid ${status}"></i>
                         <h2 class="text-xl font-semibold">${service.name}</h2>
                     </div>
 
-                    <div class="min-v-screen">
-                        <progress class="progress progress-${inv_color} w-full" value="${count}" max="${threshold}"></progress>
+
+                    <div class="flex flex-col md:flex-row items-start md:items-center">
+                        <div class="min-w-screen">
+                            <progress class="progress progress-${inv_color} w-full" value="${count}" max="${threshold}"></progress>
+                        </div>
                     </div>
 
+                    <button class="btn btn-square btn-outline btn-info no-animation">
+                        <i class="fa-solid fa-info"></i>
+                    </button>
                 </div>
-
-                <p class="text-sm">
-                    Latency: <span class="font-medium">${service.latency}</span>
-                </p>
             </div>`
             }
 
