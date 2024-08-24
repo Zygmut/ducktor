@@ -46,7 +46,7 @@ func NewMonitor(configs []healthcheck.HealthCheck) (*Monitor, error) {
 			Name:               config.Name,
 			Checker:            checker,
 			Interval:           time.Duration(config.Interval) * time.Second,
-			UnHealthyThreshold: config.UnHealthyThreshold,
+			UnhealthyThreshold: config.UnHealthyThreshold,
 			HealthyThreshold:   config.HealthyThreshold,
 			IsHealthy:          false,
 		}
@@ -77,7 +77,8 @@ func (m *Monitor) Run(port int) {
 
 				if result.IsHealthy {
 					s.UnhealthyCount = 0
-					s.HealthyCount++
+
+					s.HealthyCount = min(s.HealthyThreshold, s.HealthyCount+1)
 
 					if s.HealthyCount >= s.HealthyThreshold {
 						s.IsHealthy = true
@@ -87,9 +88,10 @@ func (m *Monitor) Run(port int) {
 
 				} else {
 					s.HealthyCount = 0
-					s.UnhealthyCount++
 
-					if s.UnhealthyCount >= s.UnHealthyThreshold {
+					s.UnhealthyCount = min(s.UnhealthyThreshold, s.UnhealthyCount+1)
+
+					if s.UnhealthyCount >= s.UnhealthyThreshold {
 						s.IsHealthy = false
 						metrics.Fail.With(prometheus.Labels{"service_name": s.Name}).Inc()
 						metrics.Health.With(prometheus.Labels{"service_name": s.Name}).Set(0)
@@ -155,9 +157,13 @@ func info(m Monitor) http.HandlerFunc {
 			}
 
 			services = append(services, map[string]string{
-				"name":    svc.Name,
-				"latency": m.LastChecks[idx].ResponseTime.String(),
-				"status":  serviceStatus,
+				"name":                svc.Name,
+				"latency":             m.LastChecks[idx].ResponseTime.String(),
+				"status":              serviceStatus,
+				"healthy_threshold":   strconv.Itoa(svc.HealthyThreshold),
+				"healthy_count":       strconv.Itoa(svc.HealthyCount),
+				"unhealthy_threshold": strconv.Itoa(svc.UnhealthyThreshold),
+				"unhealthy_count":     strconv.Itoa(svc.UnhealthyCount),
 			})
 		}
 
@@ -178,11 +184,11 @@ func health(m Monitor) http.HandlerFunc {
 		defer healthMu.Unlock()
 
 		for _, svc := range m.Services {
-			if !svc.IsHealthy {
+			if svc.IsHealthy {
+				response[svc.Name] = "OK"
+			} else {
 				status = http.StatusServiceUnavailable
 				response[svc.Name] = "KO"
-			} else {
-				response[svc.Name] = "OK"
 			}
 		}
 
@@ -198,4 +204,11 @@ func webView() http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "%s", string(HTML_CONTENT))
 	}
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

@@ -56,7 +56,11 @@
 
             function serviceComponent(service) {
                 let color = service.status == "OK" ? "success" : "error"
+                let inv_color = service.status == "OK" ? "error" : "success"
                 let status = service.status == "OK" ? "up" : "down"
+                let threshold = service.status == "OK" ? service.unhealthy_threshold : service.healthy_threshold
+                let count = service.status == "OK" ? service.unhealthy_count : service.healthy_count
+                let progress_status = service.status == "OK" ? "Unhealthy" : "Healthy"
 
                 return `
             <div class="card-bordered bg-base-300 w-full rounded-lg overflow-hidden border-${color} p-4">
@@ -64,6 +68,11 @@
                     <div class="flex items-center justify-between gap-x-2">
                         <i class="text-xl text-${color} fa-solid fa-thumbs-${status}"></i>
                         <h2 class="text-xl font-semibold">${service.name}</h2>
+                    </div>
+
+                    <div>
+                        <p>${progress_status} Threshold</p>
+                        <progress class="progress progress-${inv_color} w-56" value="${count}" max="${threshold}"></progress>
                     </div>
 
                 </div>

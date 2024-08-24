@@ -11,7 +11,7 @@ type Service struct {
 	Name               string
 	Checker            healthcheck.HealthChecker
 	Interval           time.Duration
-	UnHealthyThreshold int
+	UnhealthyThreshold int
 	HealthyThreshold   int
 	UnhealthyCount     int
 	HealthyCount       int
