@@ -10,7 +10,6 @@ import (
 	"log/slog"
 	"net/http"
 	"reflect"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -28,9 +27,6 @@ type Monitor struct {
 
 var (
 	healthMu sync.Mutex
-
-	//go:embed index.html
-	HTML_CONTENT string
 )
 
 func NewMonitor(configs []healthcheck.HealthCheck) (*Monitor, error) {
@@ -60,8 +56,6 @@ func NewMonitor(configs []healthcheck.HealthCheck) (*Monitor, error) {
 }
 
 func (m *Monitor) Run(port int) {
-
-	HTML_CONTENT = strings.ReplaceAll(HTML_CONTENT, "{{PORT}}", strconv.Itoa(port))
 
 	go serve(m, port)
 
@@ -112,7 +106,6 @@ func (m *Monitor) Run(port int) {
 
 func serve(m *Monitor, port int) {
 	routes := map[string]http.HandlerFunc{
-		"/":       webView(),
 		"/health": health(*m),
 		"/info":   info(*m),
 	}
@@ -198,14 +191,6 @@ func health(m Monitor) http.HandlerFunc {
 		w.WriteHeader(status)
 
 		json.NewEncoder(w).Encode(response)
-	}
-}
-
-func webView() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "%s", string(HTML_CONTENT))
 	}
 }
 
