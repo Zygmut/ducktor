@@ -1,9 +1,5 @@
 version: '3'
 
-vars:
-  GO_VERSION: "1.19"
-  BINARY_NAME: "ducktor"
-
 tasks:
   pre:
     desc: "Run Pre-commit"
@@ -18,7 +14,7 @@ tasks:
   build:
     desc: "Build the Go application"
     cmds:
-      - go build -o ./bin/{{.BINARY_NAME}} ./cmd
+      - go build -o ./bin/ducktor ./cmd
 
   run:
     desc: "Run the Go application"
