@@ -22,10 +22,12 @@ func (h *HTTPChecker) CheckHealth() HealthCheckResult {
 	url.WriteString(h.Protocol)
 	url.WriteString("://")
 	url.WriteString(h.Host)
+
 	if h.Port != 0 {
 		url.WriteString(":")
 		url.WriteString(strconv.Itoa(h.Port))
 	}
+
 	if h.Endpoint != "" {
 		url.WriteString("/")
 		url.WriteString(h.Endpoint)

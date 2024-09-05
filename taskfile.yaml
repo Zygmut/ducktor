@@ -21,21 +21,10 @@ tasks:
     cmds:
       - go run ./cmd/main.go
 
-  fmt:
-    desc: "Format Go code"
-    cmds:
-      - gofmt -w .
-
-  clean:
-    desc: "Clean up build artifacts"
-    cmds:
-      - rm -rf ./bin
-
   all:
     desc: "Run all build tasks (init, fmt, lint, build)"
     cmds:
       - task init
-      - task fmt
       - task build
       - ./bin/ducktor
-      - task clean
+      - rm -rf ./bin

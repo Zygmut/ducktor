@@ -22,5 +22,9 @@ func (t *TCPChecker) CheckHealth() HealthCheckResult {
 		isHealthy = true
 	}
 
-	return HealthCheckResult{IsHealthy: isHealthy, ResponseTime: response_time, Error: err}
+	return HealthCheckResult{
+		IsHealthy:    isHealthy,
+		ResponseTime: response_time,
+		Error:        err,
+	}
 }

@@ -4,7 +4,6 @@ import (
 	"ducktor/pkg/healthcheck"
 	"ducktor/pkg/metrics"
 	"ducktor/pkg/service"
-	_ "embed"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -34,7 +33,8 @@ func NewMonitor(configs []healthcheck.HealthCheck) (*Monitor, error) {
 	lastChecks := make([]healthcheck.HealthCheckResult, len(configs))
 
 	for i, config := range configs {
-		checker, err := healthcheck.NewHealthChecker(config)
+		checker, err := healthcheck.HealthCheckerFrom(config)
+
 		if err != nil {
 			return nil, fmt.Errorf("error while creating HealthChecker: %s", err)
 		}
@@ -49,7 +49,6 @@ func NewMonitor(configs []healthcheck.HealthCheck) (*Monitor, error) {
 		}
 
 		lastChecks[i] = healthcheck.HealthCheckResult{IsHealthy: false}
-
 	}
 
 	return &Monitor{Services: services, LastChecks: lastChecks}, nil

@@ -29,7 +29,7 @@ type HealthCheckResult struct {
 	Error        error
 }
 
-func NewHealthChecker(config HealthCheck) (HealthChecker, error) {
+func HealthCheckerFrom(config HealthCheck) (HealthChecker, error) {
 	switch strings.ToLower(config.Interface) {
 	case "http", "https":
 		return &HTTPChecker{
