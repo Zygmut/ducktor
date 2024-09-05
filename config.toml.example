@@ -1,0 +1,30 @@
+port = 8000
+
+[[healthcheck]]
+name               = "Service A"
+interface          = "http"
+host               = "localhost"
+port               = 8001
+endpoint           = "health"
+match              = 200
+interval           = 3
+healthyThreshold   = 5
+unHealthyThreshold = 5
+
+[[healthcheck]]
+name               = "Service B"
+interface          = "tcp"
+host               = "localhost"
+port               = 8002
+interval           = 3
+healthyThreshold   = 5
+unHealthyThreshold = 5
+
+[[healthcheck]]
+name               = "Google"
+interface          = "http"
+host               = "www.google.com"
+match              = 200
+interval           = 3
+healthyThreshold   = 2
+unHealthyThreshold = 5

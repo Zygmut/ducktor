@@ -2,11 +2,29 @@ version: '3'
 
 tasks:
   pre:
+    desc: "Run Pre-commit"
     cmds:
       - pre-commit run -a
+
+  init:
+    desc: "Initialize Go modules"
+    cmds:
+      - go mod tidy
+
   build:
+    desc: "Build the Go application"
     cmds:
-      - go build -v ducktor.go
-  run :
+      - go build -o ./bin/ducktor ./cmd
+
+  run:
+    desc: "Run the Go application"
     cmds:
-      - go run ducktor.go
+      - go run ./cmd/main.go
+
+  all:
+    desc: "Run all build tasks (init, fmt, lint, build)"
+    cmds:
+      - task init
+      - task build
+      - ./bin/ducktor
+      - rm -rf ./bin
